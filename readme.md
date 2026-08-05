@@ -16,26 +16,25 @@
 flowchart TD
     A["Instagram Feed - Videos + Metrics"] --> B["Ingestion - Meta Graph API / Apify"]
     B --> C["Object Storage - S3 / Local"]
-    C --> D1["Frame Sampler - ffmpeg at 1fps"]
+    C --> D1["Frame Sampler - 1 frame per second"]
 
     D1 --> D2["Gemini 2.0 Flash - Scene, Hook, Emotion, Text"]
     D1 --> D3["Whisper Small - Transcript + Caption"]
-    D1 --> D4["CLIP Embeddings - Visual style vectors, PCA 512 to 10 dims"]
+    D1 --> D4["CLIP - Visual style embeddings"]
 
-    D2 & D3 & D4 --> E["Feature Store - SQLite - structured tags + style dims"]
+    D2 & D3 & D4 --> E["Feature Store - SQLite"]
 
     F["Performance Metrics DB - views, watch_time, CTR, saves"] --> G
 
     subgraph G["Model Layer"]
-        G1["Composite Score - 0.35 x views + 0.25 x watch_time + ..."]
-        G2["LightGBM Regressor - Gemini + CLIP + Whisper to score"]
-        G3["SHAP Explainer - which features drive performance"]
+        G1["Composite Score - weighted sum of metrics"]
+        G2["LightGBM - predicts performance score"]
+        G3["SHAP - explains which features matter"]
         G1 --> G2 --> G3
     end
 
     E --> G
-    G --> H["FastAPI - /predict, /rank, /explain"]
-    H --> I["Ranked Videos + Why explanations"]
+    G --> I["Ranked Videos + Why explanations"]
 ```
 
 ---
