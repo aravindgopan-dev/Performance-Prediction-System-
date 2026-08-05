@@ -14,22 +14,12 @@
 
 ---
 
-## How It Works
-
-Every day the agent runs a loop:
-
-1. **Observe** — read latest video rankings + SHAP explanations
-2. **Reason** — LLM  looks at the insights and decides what to do
-3. **Act** — calls one of the tools above
-4. **Remember** — stores what it did and what worked, feeds back into the model
-
----
 
 ## Agent Architecture
 
 ```mermaid
 flowchart TD
-    S(["__start__"]) --> observe["observe\nfetch rankings + SHAP"]
+    S(["__start__"]) --> observe["observe\nfetch rankings + SHAP (feature importance scores)"]
     observe --> reason["reason\nLLM decides next action"]
     reason --> router{"router\nwhich tool?"}
 
