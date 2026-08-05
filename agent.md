@@ -1,21 +1,27 @@
-# 🤖 Evolving into an Agentic System
+# 🤖 Agentic System
 
-> Beyond prediction — a system that **acts**, not just ranks.
+> Each day we rank the performance of our videos and fetch insights of the video.
+> With the insights we invoke the agent.
+> We create some tools like:
+> - `create_brief`
+> - `reallocate_budget`
+> - `create_experiment`
+> - `fetch_metrics`
+> - `score_new_video`
+> - `alert_human`
+>
+> We can also implement a human-in-the-loop architecture for major decisions.
 
 ---
 
-## The Shift: Predict → Recommend → Execute
+## How It Works
 
-```mermaid
-flowchart LR
-    A["Prediction System\nranks existing videos"] -->|"add reasoning + tools"| B["Agentic System\nrecommends + acts"]
-    B --> C["Creative Brief Generator"]
-    B --> D["Budget Reallocator"]
-    B --> E["Experiment Runner"]
-```
+Every day the agent runs a loop:
 
-The prediction system answers: *"which video will perform best?"*  
-The agent answers: *"what should we do next — and then does it."*
+1. **Observe** — read latest video rankings + SHAP explanations
+2. **Reason** — LLM  looks at the insights and decides what to do
+3. **Act** — calls one of the tools above
+4. **Remember** — stores what it did and what worked, feeds back into the model
 
 ---
 
@@ -23,88 +29,48 @@ The agent answers: *"what should we do next — and then does it."*
 
 ```mermaid
 flowchart TD
-    OB["Observation\nlatest rankings + SHAP insights"] --> LLM["LLM Brain\nGemini Flash"]
-    LLM --> T1["Tool: generate_brief\ncreate next creative brief"]
-    LLM --> T2["Tool: reallocate_budget\nshift spend to top performers"]
-    LLM --> T3["Tool: create_experiment\nA/B test two hook types"]
-    LLM --> T4["Tool: fetch_metrics\ncheck if experiment worked"]
-    T1 & T2 & T3 & T4 --> MEM["Memory\nwhat was tried + what worked"]
-    MEM --> OB
-```
+    S(["__start__"]) --> observe["observe\nfetch rankings + SHAP"]
+    observe --> reason["reason\nLLM decides next action"]
+    reason --> router{"router\nwhich tool?"}
 
-The agent runs in a loop: **Observe → Reason → Act → Learn → Repeat**
+    router -->|"brief needed"| generate_brief["generate_brief"]
+    router -->|"budget shift"| reallocate_budget["reallocate_budget"]
+    router -->|"uncertain"| create_experiment["create_experiment"]
+    router -->|"check results"| fetch_metrics["fetch_metrics"]
+    router -->|"pre-publish"| score_new_video["score_new_video"]
+    router -->|"anomaly"| alert_human["alert_human"]
+
+    generate_brief & reallocate_budget & create_experiment & fetch_metrics & score_new_video & alert_human --> update_memory["update_memory\nstore what was done"]
+
+    update_memory --> should_continue{"done?"}
+    should_continue -->|"no"| observe
+    should_continue -->|"yes"| E(["__end__"])
+```
 
 ---
 
-## What Each Tool Does
+## Tools
 
-### 1. `generate_brief` — Creative Recommendation
-After SHAP reveals that *story hooks + faces drive 70% of performance*, the agent writes the next brief automatically:
-
-```
-Agent output:
-"For your next video:
- - Open with a 3-second story hook (person sharing a problem)
- - Show a face in the first frame
- - Use upbeat background music
- - Add a CTA at 8 seconds
- - Keep under 20 seconds"
-```
-
-No human needed to interpret the data — the agent reads SHAP values and drafts the brief.
-
-### 2. `reallocate_budget` — Autonomous Spend Optimization
-Agent connects to Meta Ads API and increases daily budget on top-ranked ads, pauses bottom performers:
-
-```python
-def reallocate_budget(rankings, total_budget):
-    # Top 3 get 70% of budget, rest get paused
-    for i, video in enumerate(rankings):
-        if i < 3:
-            set_ad_budget(video["ad_id"], total_budget * weights[i])
-        else:
-            pause_ad(video["ad_id"])
-```
-
-### 3. `create_experiment` — A/B Test Runner
-Agent detects uncertainty (two hook types have similar SHAP values) and automatically creates an A/B test:
-
-```
-Agent: "I'm not sure if 'question hooks' beat 'story hooks' for your brand.
-        I've created an experiment: running both for 48 hours, equal budget.
-        I'll report back with the winner."
-```
-
-### 4. `fetch_metrics` — Close the Loop
-Agent checks experiment results, updates the model, and incorporates learnings into future predictions — **getting smarter over time**.
+| Tool | What it does |
+|------|-------------|
+| `generate_brief` | Reads SHAP insights and writes the next video creative brief |
+| `reallocate_budget` | Increases spend on top-ranked ads, pauses bottom performers |
+| `create_experiment` | Runs an A/B test when the agent is uncertain between two styles |
+| `fetch_metrics` | Checks results of experiments and updates the model |
+| `score_new_video` | Before a video goes live, predicts its performance score — catches bad creatives early |
+| `alert_human` | Sends a Slack/email notification when something unusual happens (sudden CTR drop, viral spike) |
 
 ---
 
-## Agent Memory
-
-The agent keeps two types of memory:
+## Memory
 
 | Type | What it stores |
 |------|---------------|
-| **Short-term** | Current rankings, active experiments, this week's briefs |
-| **Long-term** | What worked historically — "story hooks always win for this brand" |
-
-Long-term memory feeds back into LightGBM training as additional signal.
+| **Short-term** | Current rankings, active experiments, briefs from this week |
+| **Long-term** | What has historically worked — feeds back into LightGBM retraining |
 
 ---
 
-## Human-in-the-Loop (for safety)
+## Human-in-the-Loop
 
-Not every action auto-executes. The agent uses a confidence threshold:
-
-```
-High confidence (>0.85) → auto-execute (budget reallocation)
-Medium confidence (0.6–0.85) → suggest to human, wait for approval
-Low confidence (<0.6) → flag for review, run experiment first
-```
-
----
-
-## One-Line Summary
-
-> The prediction system tells you what worked. The agent figures out what to do next, does it, measures the result, and learns — closing the loop from data to action without manual intervention.
+Not every action auto-executes. Major decisions (like large budget shifts) require human approval before the agent proceeds.
