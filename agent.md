@@ -1,16 +1,20 @@
 # 🤖 Agentic System
 
-> Each day we rank the performance of our videos and fetch insights of the video.
-> With the insights we invoke the agent.
-> We create some tools like:
-> - `create_brief`
-> - `reallocate_budget`
-> - `create_experiment`
-> - `fetch_metrics`
-> - `score_new_video`
-> - `alert_human`
+> The prediction system tells us **which videos performed best**.
+> The agent goes further — it takes those insights and **acts on them automatically**.
 >
-> We can also implement a human-in-the-loop architecture for major decisions.
+> Each day we rank the performance of our videos and fetch SHAP insights.
+> With those insights, we invoke the agent — it runs a loop of observe → reason → act → remember.
+>
+> We give the agent these tools:
+> - `generate_brief` — write the next creative brief based on what worked
+> - `reallocate_budget` — shift spend to top performers, pause the rest
+> - `create_experiment` — run an A/B test when the agent is uncertain
+> - `fetch_metrics` — check if an experiment worked, update the model
+> - `score_new_video` — predict a video's score before it goes live
+> - `alert_human` — notify the team when something unusual happens
+>
+> For major decisions, we implement a **human-in-the-loop** — the agent suggests, a human approves.
 
 ---
 
